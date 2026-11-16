@@ -17,6 +17,30 @@ export const MAX_BOUNDS = [
   [-158.5, 22.7],
 ];
 
+// Where spot data comes from. Local seed file in development; the published
+// Google Sheet is wired in at the "Sheet loading" step.
+export const DATA_URL = import.meta.env.DEV ? '/data/seed.csv' : '';
+
+// One color and one Tabler icon per category. Order here is the order of filter chips.
+export const CATEGORIES = {
+  beach: { label: 'Beaches', color: '#e39b2d', icon: 'beach' },
+  snorkel: { label: 'Snorkel', color: '#1f7fc1', icon: 'scuba-mask' },
+  hike: { label: 'Hikes', color: '#8b5e34', icon: 'mountain' },
+  activity: { label: 'Activities', color: '#8e4fb5', icon: 'ticket' },
+  restaurant: { label: 'Food', color: '#d4473f', icon: 'tools-kitchen-2' },
+  home: { label: 'Home base', color: '#23302a', icon: 'home' },
+};
+
+export const TAGS = [
+  'reservation-required',
+  'winter-caution',
+  'calm-days-only',
+  'go-early',
+  'fee',
+  'check-status',
+  'lifeguard',
+];
+
 export const TILES = {
   openFreeMap: 'https://tiles.openfreemap.org/planet',
   glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
