@@ -24,11 +24,23 @@ html, body {
   inset: 0;
 }
 
-.title-bar {
+/* Title + filter chips. Phone: stacked, chips scroll sideways. Desktop: one row. */
+.top-bar {
   position: fixed;
   top: calc(env(safe-area-inset-top) + 12px);
-  left: 16px;
-  z-index: 2;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+.top-bar > * { pointer-events: auto; }
+
+.title-bar {
+  margin-left: 16px;
   padding: 6px 14px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -57,6 +69,154 @@ html, body {
   font-family: var(--font);
   font-size: 11px;
 }
+
+/* ---------- Filter chips ---------- */
+.filters {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  padding: 2px 16px 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px 0 6px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--muted);
+  font: 700 14px var(--font);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+.chip-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e3e8e4;
+  color: #8a968e;
+}
+.chip-icon svg { width: 17px; height: 17px; }
+.chip.on { border-color: var(--cat); color: var(--ink); }
+.chip.on .chip-icon { background: var(--cat); color: #fff; }
+
+/* ---------- List: drawer (phone) / sidebar (desktop) ---------- */
+.list-button {
+  position: fixed;
+  left: 50%;
+  /* Sits above the map credits, which must stay readable. */
+  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  transform: translateX(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: 800 16px var(--font);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.list-open .list-button { display: none; }
+
+.list-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  height: 75dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
+  transform: translateY(105%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.28s;
+  visibility: hidden;
+}
+.list-panel.open {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.list-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 6px 16px;
+}
+.list-title { margin: 0; font-size: 18px; font-weight: 800; }
+.list-close {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f0f3f1;
+  color: var(--ink);
+  cursor: pointer;
+}
+.list-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px calc(env(safe-area-inset-bottom) + 16px);
+}
+.list-group-title {
+  margin: 12px 8px 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.list-group ul { margin: 0; padding: 0; list-style: none; }
+.list-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.list-item:hover, .list-item:focus-visible { background: #eef5f1; }
+.list-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--cat);
+  color: #fff;
+}
+.list-icon svg { width: 19px; height: 19px; }
+.list-text { display: flex; flex-direction: column; min-width: 0; }
+.list-name { font-weight: 700; font-size: 15px; line-height: 1.25; }
+.list-meta { font-size: 13px; color: var(--muted); }
+.list-empty { margin: 16px 8px; color: var(--muted); }
 
 /* ---------- Spot sheet (phone) / side panel (desktop) ---------- */
 .sheet {
@@ -204,7 +364,34 @@ html, body {
 @media (min-width: 900px) {
   #map { inset: 12px; border: 2px solid var(--frame); border-radius: 6px; overflow: hidden; }
   body { background: #f4f1ea; }
-  .title-bar { top: 28px; left: 28px; }
+  .top-bar { top: 28px; left: 28px; right: 28px; flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .title-bar { margin-left: 0; }
+  .filters { padding: 0; flex-wrap: wrap; overflow: visible; }
+
+  /* Sidebar sits under the top bar and stops above the map credits. */
+  .list-panel {
+    left: 24px;
+    right: auto;
+    top: 84px;
+    bottom: 56px;
+    width: 320px;
+    height: auto;
+    border-radius: 14px;
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+    transform: translateX(calc(-100% - 40px));
+  }
+  .list-panel.open { transform: none; }
+  .list-grip { display: none; }
+  .list-head { padding-top: 10px; }
+  .list-button {
+    left: 28px;
+    top: 84px;
+    bottom: auto;
+    transform: none;
+    min-height: 40px;
+    padding: 0 16px;
+    font-size: 15px;
+  }
 
   .sheet {
     left: auto;

@@ -9,7 +9,7 @@ import ticket from '../icons/ticket.svg?raw';
 import kitchen from '../icons/tools-kitchen-2.svg?raw';
 import home from '../icons/home.svg?raw';
 
-const ICON_SVG = {
+export const ICON_SVG = {
   beach,
   'scuba-mask': scubaMask,
   mountain,
@@ -182,6 +182,12 @@ export function addSpotLayers(map, spots) {
       'symbol-sort-key': ['match', ['get', 'primary'], 'home', 0, 1],
     },
   });
+}
+
+// Replace the spots on the map (used by filters). Rebuilding the data, rather than
+// hiding layers, keeps cluster counts honest.
+export function setSpots(map, spots) {
+  map.getSource(SOURCE).setData(toGeoJSON(spots));
 }
 
 // Taps hit the nearest pin within a generous box, so small thumbs still land on it.

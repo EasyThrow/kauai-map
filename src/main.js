@@ -1,25 +1,41 @@
 import { createMap } from './map.js';
 import { DATA_URL } from './config.js';
 import { loadSpots } from './data.js';
-import { addPinImages, addSpotLayers, wireSpotClicks } from './pins.js';
+import { addPinImages, addSpotLayers, setSpots, wireSpotClicks } from './pins.js';
 import { readHash, writeHash, onHashChange } from './hash.js';
 import { createSheet } from './ui/sheet.js';
 import { wireTooltip } from './ui/tooltip.js';
+import { createFilters, FILTER_KEYS } from './ui/filters.js';
+import { createList } from './ui/list.js';
 
 // Zoom at which clusters have broken apart, so a deep-linked pin is visible.
 const SPOT_ZOOM = 15;
+const DESKTOP = window.matchMedia('(min-width: 900px)');
+const SIDEBAR_SPACE = 344; // desktop list width + gap, kept clear on the map
 
 const map = createMap('map');
 
 // Exposed only for local debugging in the browser console.
 if (import.meta.env.DEV) window.__map = map;
 
+// Filters from the URL (#cats=beach,hike); all on when absent.
+function activeFromHash() {
+  const { cats } = readHash();
+  if (!cats) return new Set(FILTER_KEYS);
+  return new Set(cats.filter((c) => FILTER_KEYS.includes(c)));
+}
+
+const isVisible = (spot, active) =>
+  spot.primary === 'home' || spot.categories.some((c) => active.has(c));
+
 map.on('load', async () => {
   try {
     const [spots] = await Promise.all([loadSpots(DATA_URL), addPinImages(map)]);
     const placeable = spots.filter((s) => s.lat != null && s.lng != null && s.id);
     const spotsById = new Map(placeable.map((s) => [s.id, s]));
-    addSpotLayers(map, placeable);
+    let active = activeFromHash();
+    let visible = placeable.filter((s) => isVisible(s, active));
+    addSpotLayers(map, visible);
 
     const sheet = createSheet({ onClose: () => writeHash({ spot: null }) });
 
@@ -39,16 +55,42 @@ map.on('load', async () => {
       map.easeTo({ ...move, duration: animate ? 600 : 0 });
     }
 
+    const list = createList({
+      onPick: (id) => select(id, { zoomIn: true }),
+      onToggle: (open) => {
+        // Desktop: keep the sidebar's strip of map clear. Phone: drawer replaces the sheet.
+        if (DESKTOP.matches) map.easeTo({ padding: { left: open ? SIDEBAR_SPACE : 0 }, duration: 300 });
+        else if (open) sheet.hide();
+      },
+    });
+
+    function applyFilters(next, { updateHash = true } = {}) {
+      active = next;
+      visible = placeable.filter((s) => isVisible(s, active));
+      setSpots(map, visible);
+      list.render(visible, active);
+      if (sheet.currentId && !visible.some((s) => s.id === sheet.currentId)) sheet.hide();
+      if (updateHash) writeHash({ cats: active.size === FILTER_KEYS.length ? null : [...active] });
+    }
+
+    const filters = createFilters({ active: new Set(active), onChange: (next) => applyFilters(next) });
+    list.render(visible, active);
+
     wireSpotClicks(map, {
       onSpot: (id) => select(id),
       onEmpty: () => sheet.hide(),
     });
     wireTooltip(map, spotsById);
 
-    // Deep links: #spot=koloa-landing
+    // Deep links: #spot=koloa-landing&cats=beach,snorkel
     const { spot } = readHash();
     if (spot) select(spot, { zoomIn: true, animate: false });
     onHashChange(({ spot: id }) => {
+      const fromHash = activeFromHash();
+      if ([...fromHash].join() !== [...active].join()) {
+        filters.set(fromHash);
+        applyFilters(fromHash, { updateHash: false });
+      }
       if (id && id !== sheet.currentId) select(id, { zoomIn: true });
       else if (!id) sheet.hide({ silent: true });
     });

@@ -33,14 +33,20 @@ const ATTRIBUTION =
 const TERRAIN_ATTRIBUTION =
   'Terrain: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a>';
 
-const terrainSource = (attribution) => ({
+// One elevation source shared by the bands, depth shading and hillshade.
+// - bounds: only fetch tiles around Kauai, never open ocean.
+// - maxzoom 12: the bands are smooth, so coarser tiles stretched up look the same
+//   and save most of the downloads when zoomed in.
+const terrainSource = {
   type: 'raster-dem',
   tiles: [TILES.terrain],
   encoding: 'terrarium',
   tileSize: 256,
-  maxzoom: 14,
-  ...(attribution ? { attribution } : {}),
-});
+  maxzoom: 12,
+  // Same area the map can pan to (MAX_BOUNDS), so no edge of untinted water shows.
+  bounds: [-160.6, 21.4, -158.5, 22.7],
+  attribution: TERRAIN_ATTRIBUTION,
+};
 
 // Flat color bands with a short blend at each edge, from [[startElevation, color], ...].
 // Each color runs from its start elevation up to the next band's start.
@@ -88,9 +94,7 @@ export function buildStyle() {
     glyphs: TILES.glyphs,
     sources: {
       omt: { type: 'vector', url: TILES.openFreeMap, attribution: ATTRIBUTION },
-      terrain: terrainSource(TERRAIN_ATTRIBUTION),
-      // Separate source instance for hillshade avoids a MapLibre warning about shared DEM sources.
-      terrainShade: terrainSource(),
+      terrain: terrainSource,
     },
     layers: [
       // Ocean blue underneath, so tiles that are still loading read as sea rather than land.
@@ -112,7 +116,7 @@ export function buildStyle() {
       {
         id: 'hillshade',
         type: 'hillshade',
-        source: 'terrainShade',
+        source: 'terrain',
         paint: {
           'hillshade-exaggeration': 0.2,
           'hillshade-shadow-color': 'rgba(20, 60, 35, 0.45)',
@@ -141,7 +145,7 @@ export function buildStyle() {
             [-600, P.midWater],
             [-40, 'rgba(0,0,0,0)'],
           ]),
-          // Elevation tiles stop at zoom 14 and look blocky beyond it; fade to plain water.
+          // Stretched elevation tiles look blocky along the coast up close; fade to plain water.
           'color-relief-opacity': ['interpolate', ['linear'], ['zoom'], 12.5, 1, 14, 0],
         },
       },
