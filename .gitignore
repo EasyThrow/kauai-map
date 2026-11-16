@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-locked/
+.env.local
+*.local
+
+# Trip data stays out of the public repo
+data/seed.csv
+data/spots.csv
+
+# Project brief (contains the seed trip data) and the third-party style reference image
+Kauai Trip Map Project/

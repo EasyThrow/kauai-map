@@ -1,0 +1,66 @@
+:root {
+  --accent: #1ba684;
+  --ink: #1a1a1a;
+  --muted: #5b6b60;
+  --card: #ffffff;
+  --border: #d5ddd6;
+  --frame: #2b2f2c;
+  --font: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #a9d8f2;
+  font-family: var(--font);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#map {
+  position: fixed;
+  inset: 0;
+}
+
+.title-bar {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  left: 16px;
+  z-index: 2;
+  padding: 6px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+.title {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+/* Keep MapLibre controls in the house style */
+.maplibregl-ctrl-group {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+.maplibregl-ctrl-group button {
+  width: 40px;
+  height: 40px;
+}
+.maplibregl-ctrl-attrib {
+  font-family: var(--font);
+  font-size: 11px;
+}
+
+/* Desktop: thin dark frame like the reference */
+@media (min-width: 900px) {
+  #map { inset: 12px; border: 2px solid var(--frame); border-radius: 6px; overflow: hidden; }
+  body { background: #f4f1ea; }
+  .title-bar { top: 28px; left: 28px; }
+}
