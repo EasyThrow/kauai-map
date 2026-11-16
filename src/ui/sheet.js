@@ -7,8 +7,56 @@ import {
   tagLabel,
   CAUTION_TAGS,
   directionsUrl,
+  appleMapsUrl,
+  coordText,
+  isApplePlatform,
   safeUrl,
 } from '../format.js';
+
+const APPLE = isApplePlatform();
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Older browsers / blocked clipboard: fall back to a hidden selection.
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.append(ta);
+    ta.select();
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    ta.remove();
+    return ok;
+  }
+}
+
+function copyButton(spot) {
+  const text = coordText(spot.lat, spot.lng);
+  const b = el('button', 'btn', 'Copy location');
+  b.type = 'button';
+  b.title = text;
+  b.addEventListener('click', async () => {
+    const ok = await copyText(text);
+    // If copying is blocked, show the coordinates so they can be selected by hand.
+    b.textContent = ok ? 'Copied' : text;
+    b.classList.toggle('btn-done', ok);
+    if (ok) {
+      setTimeout(() => {
+        b.textContent = 'Copy location';
+        b.classList.remove('btn-done');
+      }, 1800);
+    }
+  });
+  return b;
+}
 
 const DESKTOP = window.matchMedia('(min-width: 900px)');
 const HALF = 0.55; // share of the viewport the sheet covers when it first opens
@@ -85,7 +133,18 @@ function renderSpot(spot) {
   if (price) body.append(el('p', 'price', price));
 
   const actions = el('div', 'actions');
-  if (spot.primary !== 'home') actions.append(linkButton('Directions', directionsUrl(spot.lat, spot.lng), true));
+  if (spot.primary !== 'home') {
+    // Apple devices: Apple Maps first, Google as the alternative. Everyone else: Google.
+    if (APPLE) {
+      actions.append(
+        linkButton('Apple Maps', appleMapsUrl(spot.lat, spot.lng), true),
+        linkButton('Google Maps', directionsUrl(spot.lat, spot.lng), false),
+      );
+    } else {
+      actions.append(linkButton('Directions', directionsUrl(spot.lat, spot.lng), true));
+    }
+    actions.append(copyButton(spot));
+  }
   for (const link of spot.links) {
     const href = safeUrl(link.url);
     if (href) actions.append(linkButton(link.label || 'Link', href, false));

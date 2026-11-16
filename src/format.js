@@ -34,6 +34,15 @@ export const formatPrice = (pp) => (pp == null ? null : `~$${Math.round(pp)} per
 export const directionsUrl = (lat, lng) =>
   `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
+// Opens the Maps app with driving directions on iPhone, iPad and Mac.
+export const appleMapsUrl = (lat, lng) => `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+
+// "21.88156, -159.47586" pastes straight into Apple or Google Maps search.
+export const coordText = (lat, lng) => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+// iPhone, iPad (which reports itself as "Macintosh") and Mac all have Apple Maps.
+export const isApplePlatform = () => /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+
 // Only allow web links from the Sheet.
 export function safeUrl(url) {
   try {

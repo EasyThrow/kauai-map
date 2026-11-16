@@ -29,16 +29,31 @@ export function createFilters({ active, onChange }) {
     bar.append(chip);
   }
 
+  // "Reset filters": only shown while at least one category is off.
+  const reset = document.createElement('button');
+  reset.type = 'button';
+  reset.className = 'filters-reset';
+  reset.innerHTML =
+    '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg>';
+  reset.append(document.createTextNode('Reset filters'));
+  reset.addEventListener('click', () => {
+    active = new Set(FILTER_KEYS);
+    sync();
+    onChange(new Set(active));
+  });
+
   function sync() {
     for (const [key, chip] of chips) {
       const on = active.has(key);
       chip.classList.toggle('on', on);
       chip.setAttribute('aria-pressed', String(on));
     }
+    reset.hidden = active.size === FILTER_KEYS.length;
   }
 
   sync();
-  (document.querySelector('.top-bar') || document.body).append(bar);
+  const host = document.querySelector('.top-bar') || document.body;
+  host.append(bar, reset);
   return {
     set(next) {
       active = new Set(next);

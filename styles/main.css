@@ -1,5 +1,5 @@
 :root {
-  --accent: #1ba684;
+  --accent: #138066; /* brand teal, darkened to 4.9:1 on white for readable text */
   --ink: #1a1a1a;
   --muted: #5b6b60;
   --card: #ffffff;
@@ -108,8 +108,26 @@ html, body {
 .chip.on { border-color: var(--cat); color: var(--ink); }
 .chip.on .chip-icon { background: var(--cat); color: #fff; }
 
+.filters-reset {
+  order: 1; /* directly below the chips */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: -2px 0 0 16px;
+  padding: 0 14px 0 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font: 800 14px var(--font);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.filters-reset[hidden] { display: none; }
+
 .data-note {
-  order: 1; /* below the chips */
+  order: 2; /* below the chips and reset */
   margin-left: 16px;
   padding: 4px 12px;
   border-radius: 999px;
@@ -489,6 +507,8 @@ button.debug-item:hover { background: #eef5f1; }
   text-decoration: none;
 }
 .btn-primary { background: var(--accent); color: #fff; }
+button.btn { font-family: var(--font); cursor: pointer; }
+.btn-done { background: #e8f4ef; }
 
 /* Desktop hover tooltip */
 .spot-tooltip .maplibregl-popup-content {
@@ -507,6 +527,7 @@ button.debug-item:hover { background: #eef5f1; }
   .top-bar { top: 28px; left: 28px; right: 28px; flex-direction: row; align-items: center; flex-wrap: wrap; }
   .title-bar { margin-left: 0; }
   .filters { padding: 0; flex-wrap: wrap; overflow: visible; }
+  .filters-reset { margin: 0; }
 
   /* Sidebar sits under the top bar and stops above the map credits. */
   .list-panel {
