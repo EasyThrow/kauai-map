@@ -17,9 +17,15 @@ export const MAX_BOUNDS = [
   [-158.5, 22.7],
 ];
 
-// Where spot data comes from. Local seed file in development; the published
-// Google Sheet is wired in at the "Sheet loading" step.
-export const DATA_URL = import.meta.env.DEV ? '/data/seed.csv' : '';
+// Where spot data comes from: the published Google Sheet (CSV).
+// Set VITE_SHEET_CSV_URL in .env.local for local work; the deploy workflow injects it
+// from the SHEET_CSV_URL repository secret. It is never committed.
+// Local fallback when the Sheet isn't set up: the gitignored seed file.
+export const SHEET_CSV_URL = import.meta.env.VITE_SHEET_CSV_URL || '';
+export const DATA_URL = SHEET_CSV_URL || (import.meta.env.DEV ? '/data/seed.csv' : '');
+
+// Give up on the live Sheet after this long and show the saved snapshot.
+export const FETCH_TIMEOUT_MS = 6000;
 
 // One color and one Tabler icon per category. Order here is the order of filter chips.
 export const CATEGORIES = {

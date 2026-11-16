@@ -1,5 +1,4 @@
 import { createMap } from './map.js';
-import { DATA_URL } from './config.js';
 import { loadSpots } from './data.js';
 import { addPinImages, addSpotLayers, setSpots, wireSpotClicks } from './pins.js';
 import { readHash, writeHash, onHashChange } from './hash.js';
@@ -30,7 +29,8 @@ const isVisible = (spot, active) =>
 
 map.on('load', async () => {
   try {
-    const [spots] = await Promise.all([loadSpots(DATA_URL), addPinImages(map)]);
+    const [{ spots, source }] = await Promise.all([loadSpots(), addPinImages(map)]);
+    if (source === 'saved') showNote('Showing saved data');
     const placeable = spots.filter((s) => s.lat != null && s.lng != null && s.id);
     const spotsById = new Map(placeable.map((s) => [s.id, s]));
     let active = activeFromHash();
@@ -98,5 +98,15 @@ map.on('load', async () => {
     if (import.meta.env.DEV) window.__spots = placeable;
   } catch (err) {
     console.error(err);
+    showNote('Spots could not be loaded. Try refreshing.');
   }
 });
+
+// Small status pill under the filter chips.
+function showNote(text) {
+  const note = document.createElement('div');
+  note.className = 'data-note';
+  note.setAttribute('role', 'status');
+  note.textContent = text;
+  (document.querySelector('.top-bar') || document.body).append(note);
+}
