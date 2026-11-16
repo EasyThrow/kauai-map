@@ -1,6 +1,9 @@
 // MapLibre style matched to the reference image.
-// Base data: OpenFreeMap (OpenMapTiles schema). Elevation: AWS Terrain Tiles (Terrarium).
+// Base data: OpenFreeMap (OpenMapTiles schema).
+// Terrain: two images baked from AWS Terrain Tiles by scripts/bake-terrain.mjs
+// (land bands + hillshade, ocean depth bands). Two small files instead of dozens of tiles.
 import { TILES } from './config.js';
+import TERRAIN_BOUNDS from './terrain-bounds.json';
 
 export const PALETTE = {
   deepWater: '#a9d8f2',
@@ -30,34 +33,23 @@ const ATTRIBUTION =
   '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> ' +
   'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
 
-const TERRAIN_ATTRIBUTION =
+// Image sources can't carry attribution, so map.js adds this to the credits control.
+export const TERRAIN_ATTRIBUTION =
   'Terrain: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a>';
 
-// One elevation source shared by the bands, depth shading and hillshade.
-// - bounds: only fetch tiles around Kauai, never open ocean.
-// - maxzoom 12: the bands are smooth, so coarser tiles stretched up look the same
-//   and save most of the downloads when zoomed in.
-const terrainSource = {
-  type: 'raster-dem',
-  tiles: [TILES.terrain],
-  encoding: 'terrarium',
-  tileSize: 256,
-  maxzoom: 12,
-  // Same area the map can pan to (MAX_BOUNDS), so no edge of untinted water shows.
-  bounds: [-160.6, 21.4, -158.5, 22.7],
-  attribution: TERRAIN_ATTRIBUTION,
-};
+// Relative to the page, so it works under the GitHub Pages project path.
+const terrainImage = (name) => ({
+  type: 'image',
+  url: `./terrain/${name}.webp`,
+  coordinates: TERRAIN_BOUNDS[name],
+});
 
-// Flat color bands with a short blend at each edge, from [[startElevation, color], ...].
-// Each color runs from its start elevation up to the next band's start.
-function bands(stops, blend = 15) {
-  const expr = ['interpolate', ['linear'], ['elevation']];
-  stops.forEach(([start, color], i) => {
-    if (i > 0) expr.push(start - blend, stops[i - 1][1]);
-    expr.push(start, color);
-  });
-  return expr;
-}
+const terrainRaster = (id, source, extraPaint = {}) => ({
+  id,
+  type: 'raster',
+  source,
+  paint: { 'raster-fade-duration': 0, 'raster-resampling': 'linear', ...extraPaint },
+});
 
 function parkLabel(id, minzoom, nameFilter, sizeLow, sizeHigh) {
   return {
@@ -94,39 +86,19 @@ export function buildStyle() {
     glyphs: TILES.glyphs,
     sources: {
       omt: { type: 'vector', url: TILES.openFreeMap, attribution: ATTRIBUTION },
-      terrain: terrainSource,
+      land: terrainImage('land'),
+      sea: terrainImage('sea'),
     },
     layers: [
-      // Ocean blue underneath, so tiles that are still loading read as sea rather than land.
+      // Ocean blue underneath, so anything still loading reads as sea rather than land.
       { id: 'background', type: 'background', paint: { 'background-color': P.deepWater } },
 
-      // Land elevation in flat bands like the reference: dark green coast to pale sage highlands.
-      {
-        id: 'land-elevation',
-        type: 'color-relief',
-        source: 'terrain',
-        paint: { 'color-relief-color': bands([
-          [0, P.coastLand],
-          [150, '#62a771'],
-          [400, P.midLand],
-          [700, '#a2c8a0'],
-          [1000, P.highLand],
-        ]) },
-      },
-      {
-        id: 'hillshade',
-        type: 'hillshade',
-        source: 'terrain',
-        paint: {
-          'hillshade-exaggeration': 0.2,
-          'hillshade-shadow-color': 'rgba(20, 60, 35, 0.45)',
-          'hillshade-highlight-color': 'rgba(255, 255, 255, 0.15)',
-          'hillshade-accent-color': 'rgba(20, 60, 35, 0.1)',
-        },
-      },
+      // Land elevation in flat bands like the reference (dark green coast to pale sage
+      // highlands) with hillshade, baked into one image.
+      terrainRaster('land-elevation', 'land'),
 
-      // Vector water is opaque so it gives a crisp coastline and hides any land shading
-      // that bleeds offshore from the coarser elevation tiles.
+      // Vector water is opaque so it gives a crisp coastline and hides any land color
+      // that the coarser terrain image bleeds offshore.
       {
         id: 'water',
         type: 'fill',
@@ -134,21 +106,11 @@ export function buildStyle() {
         'source-layer': 'water',
         paint: { 'fill-color': ['match', ['get', 'class'], 'ocean', P.shoreWater, P.midWater] },
       },
-      // Ocean depth bands from bathymetry, drawn on top of the water; transparent at or above sea level.
-      {
-        id: 'sea-depth',
-        type: 'color-relief',
-        source: 'terrain',
-        paint: {
-          'color-relief-color': bands([
-            [-10000, P.deepWater],
-            [-600, P.midWater],
-            [-40, 'rgba(0,0,0,0)'],
-          ]),
-          // Stretched elevation tiles look blocky along the coast up close; fade to plain water.
-          'color-relief-opacity': ['interpolate', ['linear'], ['zoom'], 12.5, 1, 14, 0],
-        },
-      },
+      // Ocean depth bands on top of the water; clear in the shallows.
+      // Faded out up close, where the soft image edge would look blurry along the coast.
+      terrainRaster('sea-depth', 'sea', {
+        'raster-opacity': ['interpolate', ['linear'], ['zoom'], 12.5, 1, 14, 0],
+      }),
 
       // Beaches as sand
       {

@@ -1,4 +1,4 @@
-import { buildStyle, addShieldImage } from './style.js';
+import { buildStyle, addShieldImage, TERRAIN_ATTRIBUTION } from './style.js';
 import { INITIAL_BOUNDS, MAX_BOUNDS } from './config.js';
 
 /* global maplibregl */
@@ -33,7 +33,10 @@ export function createMap(container) {
   map.addControl(new RecenterControl(), 'bottom-right');
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
   // Bottom-left keeps the required credits clear of the desktop side panel.
-  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+  map.addControl(
+    new maplibregl.AttributionControl({ compact: true, customAttribution: TERRAIN_ATTRIBUTION }),
+    'bottom-left',
+  );
 
   return map;
 }

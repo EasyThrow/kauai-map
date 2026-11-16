@@ -7,10 +7,12 @@
     "dev": "vite",
     "snapshot": "node scripts/fetch-snapshot.mjs",
     "verify": "node scripts/verify-coords.mjs",
+    "bake-terrain": "node scripts/bake-terrain.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "sharp": "0.34.5",
     "vite": "6.4.6",
     "vite-plugin-singlefile": "2.3.4"
   }

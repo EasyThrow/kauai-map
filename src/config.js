@@ -55,5 +55,5 @@ export const TAGS = [
 export const TILES = {
   openFreeMap: 'https://tiles.openfreemap.org/planet',
   glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-  terrain: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+  // Terrain is pre-baked into public/terrain/ by scripts/bake-terrain.mjs.
 };
