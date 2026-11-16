@@ -1,0 +1,74 @@
+name: Deploy map
+
+# Runs on every push to main, and on demand from the Actions tab ("Run workflow"),
+# which is also how to refresh the saved backup copy of the Sheet.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: read the code, publish to Pages, nothing else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SHEET_CSV_URL: ${{ secrets.SHEET_CSV_URL }}
+      SUGGEST_FORM_URL: ${{ secrets.SUGGEST_FORM_URL }}
+    steps:
+      - name: Check required secrets
+        env:
+          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+        run: |
+          missing=0
+          [ -n "$SITE_PASSWORD" ] || { echo "::error::Repository secret SITE_PASSWORD is not set."; missing=1; }
+          [ -n "$SHEET_CSV_URL" ] || { echo "::error::Repository secret SHEET_CSV_URL is not set."; missing=1; }
+          [ -n "$SUGGEST_FORM_URL" ] || echo "::notice::SUGGEST_FORM_URL is not set; the Suggest button will be hidden."
+          exit $missing
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Save a backup copy of the Sheet
+        run: npm run snapshot
+
+      - name: Build
+        env:
+          VITE_SHEET_CSV_URL: ${{ secrets.SHEET_CSV_URL }}
+          VITE_SUGGEST_FORM_URL: ${{ secrets.SUGGEST_FORM_URL }}
+        run: npm run build
+
+      - name: Encrypt (fails if any readable trip data remains)
+        env:
+          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+        run: npm run encrypt
+
+      # Only the encrypted output is published; dist/ (unencrypted) never leaves the runner.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-locked
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

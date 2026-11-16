@@ -1,4 +1,4 @@
-// URL hash state, e.g. #spot=koloa-landing&cats=beach,snorkel
+// URL hash state, e.g. #spot=example-beach&cats=beach,snorkel
 // Kept in the hash (not localStorage) so a texted link opens the same view.
 
 function params() {

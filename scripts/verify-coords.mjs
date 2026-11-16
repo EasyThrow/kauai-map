@@ -74,7 +74,7 @@ function meters(a, b) {
 }
 
 // Search names to try, most specific first:
-// "Lawai Beach (Beach House Beach)" -> full, "Lawai Beach", "Beach House Beach"
+// "North Beach (Old Pier Beach)" -> full, "North Beach", "Old Pier Beach"
 function queries(name) {
   const out = [name];
   const paren = name.match(/^(.*?)\s*\((.*)\)\s*$/);

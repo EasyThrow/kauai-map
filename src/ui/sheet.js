@@ -71,7 +71,7 @@ function renderSpot(spot) {
   const drive = formatDrive(spot.driveMin);
   if (drive) {
     const row = el('p', 'drive');
-    row.append(el('span', 'drive-label', 'Drive from Poipu'), el('span', 'drive-value', drive));
+    row.append(el('span', 'drive-label', 'Drive from home base'), el('span', 'drive-value', drive));
     body.append(row);
   }
 

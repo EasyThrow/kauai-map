@@ -110,7 +110,7 @@ map.on('load', async () => {
     wireTooltip(map, spotsById);
     if (DEBUG) createDebugPanel({ report, onPick: (id) => select(id, { zoomIn: true }) });
 
-    // Deep links: #spot=koloa-landing&cats=beach,snorkel
+    // Deep links: #spot=example-beach&cats=beach,snorkel
     const { spot } = readHash();
     if (spot) select(spot, { zoomIn: true, animate: false });
     onHashChange(({ spot: id }) => {
