@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "snapshot": "node scripts/fetch-snapshot.mjs",
+    "verify": "node scripts/verify-coords.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

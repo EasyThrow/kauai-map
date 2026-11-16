@@ -7,6 +7,8 @@ dist-locked/
 # Trip data stays out of the public repo
 data/seed.csv
 data/spots.csv
+# Lists every spot with coordinates, so it stays local too
+data/verification-report.md
 
 # Project brief (contains the seed trip data) and the third-party style reference image
 Kauai Trip Map Project/
