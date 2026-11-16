@@ -27,10 +27,11 @@ const P = {
 };
 
 const AREAS = {
-  // The island with a small margin, at the detail the live layers used (zoom 12).
-  land: { bounds: [-159.83, 21.84, -159.25, 22.27], zoom: 12 },
-  // Everything the map can pan to (MAX_BOUNDS in src/config.js); depth bands are soft, so zoom 10.
-  sea: { bounds: [-160.6, 21.4, -158.5, 22.7], zoom: 10 },
+  // Kauai plus Niʻihau and Lehua to the west, at the detail the live layers used (zoom 12).
+  land: { bounds: [-160.3, 21.72, -159.25, 22.27], zoom: 12 },
+  // Well past everything the map can pan to (MAX_BOUNDS in src/config.js), so no edge
+  // ever shows; depth bands are soft, so zoom 10 is plenty.
+  sea: { bounds: [-161.2, 21.0, -157.9, 23.1], zoom: 10 },
 };
 
 const LAND_BANDS = [
