@@ -15,7 +15,7 @@ export function createMap(container) {
     maxBounds: MAX_BOUNDS,
     minZoom: 8,
     maxZoom: 17,
-    attributionControl: { compact: true },
+    attributionControl: false,
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
@@ -28,6 +28,8 @@ export function createMap(container) {
   });
 
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+  // Bottom-left keeps the required credits clear of the desktop side panel.
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 
   return map;
 }

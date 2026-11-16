@@ -187,7 +187,7 @@ export function addSpotLayers(map, spots) {
 // Taps hit the nearest pin within a generous box, so small thumbs still land on it.
 const TAP_SLOP = 10;
 
-export function wireSpotClicks(map, { onSpot }) {
+export function wireSpotClicks(map, { onSpot, onEmpty }) {
   map.on('click', (e) => {
     const { x, y } = e.point;
     const box = [
@@ -204,6 +204,7 @@ export function wireSpotClicks(map, { onSpot }) {
     }
     const [pin] = map.queryRenderedFeatures(box, { layers: ['spot-pin'] });
     if (pin) onSpot(pin.properties.id);
+    else onEmpty?.();
   });
 
   for (const layer of ['cluster', 'spot-pin']) {

@@ -135,11 +135,15 @@ export function buildStyle() {
         id: 'sea-depth',
         type: 'color-relief',
         source: 'terrain',
-        paint: { 'color-relief-color': bands([
-          [-10000, P.deepWater],
-          [-600, P.midWater],
-          [-40, 'rgba(0,0,0,0)'],
-        ]) },
+        paint: {
+          'color-relief-color': bands([
+            [-10000, P.deepWater],
+            [-600, P.midWater],
+            [-40, 'rgba(0,0,0,0)'],
+          ]),
+          // Elevation tiles stop at zoom 14 and look blocky beyond it; fade to plain water.
+          'color-relief-opacity': ['interpolate', ['linear'], ['zoom'], 12.5, 1, 14, 0],
+        },
       },
 
       // Beaches as sand
