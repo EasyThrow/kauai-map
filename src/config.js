@@ -24,6 +24,11 @@ export const MAX_BOUNDS = [
 export const SHEET_CSV_URL = import.meta.env.VITE_SHEET_CSV_URL || '';
 export const DATA_URL = SHEET_CSV_URL || (import.meta.env.DEV ? '/data/seed.csv' : '');
 
+// Google Form "pre-filled link" with the answers to the latitude and longitude
+// questions set to LAT and LNG. Same handling as the Sheet URL: .env.local locally,
+// SUGGEST_FORM_URL secret at deploy, never committed. No URL = no Suggest button.
+export const SUGGEST_FORM_URL = import.meta.env.VITE_SUGGEST_FORM_URL || '';
+
 // Give up on the live Sheet after this long and show the saved snapshot.
 export const FETCH_TIMEOUT_MS = 6000;
 

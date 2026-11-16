@@ -193,8 +193,10 @@ export function setSpots(map, spots) {
 // Taps hit the nearest pin within a generous box, so small thumbs still land on it.
 const TAP_SLOP = 10;
 
-export function wireSpotClicks(map, { onSpot, onEmpty }) {
+export function wireSpotClicks(map, { onSpot, onEmpty, isBusy }) {
   map.on('click', (e) => {
+    // Another tool (e.g. picking a spot to suggest) owns this tap.
+    if (isBusy?.()) return;
     const { x, y } = e.point;
     const box = [
       [x - TAP_SLOP, y - TAP_SLOP],

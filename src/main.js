@@ -6,6 +6,8 @@ import { createSheet } from './ui/sheet.js';
 import { wireTooltip } from './ui/tooltip.js';
 import { createFilters, FILTER_KEYS } from './ui/filters.js';
 import { createList } from './ui/list.js';
+import { createSuggest } from './ui/suggest.js';
+import { SUGGEST_FORM_URL } from './config.js';
 
 // Zoom at which clusters have broken apart, so a deep-linked pin is visible.
 const SPOT_ZOOM = 15;
@@ -76,9 +78,18 @@ map.on('load', async () => {
     const filters = createFilters({ active: new Set(active), onChange: (next) => applyFilters(next) });
     list.render(visible, active);
 
+    const suggest = createSuggest(map, {
+      formUrl: SUGGEST_FORM_URL,
+      onStart: () => {
+        sheet.hide();
+        if (!DESKTOP.matches) list.setOpen(false);
+      },
+    });
+
     wireSpotClicks(map, {
       onSpot: (id) => select(id),
       onEmpty: () => sheet.hide(),
+      isBusy: suggest.isBusy,
     });
     wireTooltip(map, spotsById);
 

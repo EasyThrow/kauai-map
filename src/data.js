@@ -66,8 +66,17 @@ export const slugify = (name) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+// A Google Maps copy pasted whole into the lat cell, e.g. "21.88156, -159.47586",
+// is split into lat and lng. Returns null when the cell holds a single number.
+export function splitCoordPair(text) {
+  const m = String(text).match(/^\s*(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+  return m ? { lat: m[1], lng: m[2] } : null;
+}
+
 export function parseRow(row) {
   const r = Object.fromEntries(Object.entries(row).map(([k, v]) => [k, (v ?? '').trim()]));
+  const pair = splitCoordPair(r.lat ?? '');
+  if (pair) Object.assign(r, pair);
   const get = (k) => r[k] ?? '';
   const primary = get('primary_category').toLowerCase();
   const categories = list(get('categories').toLowerCase(), '|');

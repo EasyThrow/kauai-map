@@ -230,6 +230,78 @@ html, body {
 .list-meta { font-size: 13px; color: var(--muted); }
 .list-empty { margin: 16px 8px; color: var(--muted); }
 
+/* ---------- Suggest a spot ---------- */
+.suggest-button {
+  position: fixed;
+  left: 16px;
+  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 0 16px 0 12px;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  font: 800 15px var(--font);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.list-open .suggest-button,
+.suggest-picking .suggest-button,
+.suggest-picking .list-button { display: none; }
+
+.suggest-banner {
+  position: fixed;
+  left: 16px; /* clear of the zoom buttons on the right */
+  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  z-index: 6;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+.suggest-picking .suggest-banner { display: inline-flex; }
+.suggest-cancel {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: 800 14px var(--font);
+  cursor: pointer;
+}
+
+.suggest-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(27, 166, 132, 0.3), 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.suggest-popup .maplibregl-popup-content {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-family: var(--font);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+.suggest-popup strong { font-size: 16px; }
+.suggest-coords { margin-top: 2px; font-size: 13px; color: var(--muted); }
+.suggest-hint { margin-top: 6px; font-size: 13px; color: #8a4a0b; }
+.suggest-popup .actions { margin: 10px 0 0; }
+.suggest-popup .maplibregl-popup-close-button { font-size: 20px; width: 32px; height: 32px; }
+
 /* ---------- Spot sheet (phone) / side panel (desktop) ---------- */
 .sheet {
   position: fixed;
@@ -395,6 +467,10 @@ html, body {
   .list-panel.open { transform: none; }
   .list-grip { display: none; }
   .list-head { padding-top: 10px; }
+  .suggest-button { left: 50%; bottom: 40px; transform: translateX(-50%); }
+  .list-open .suggest-button { display: inline-flex; } /* sidebar doesn't cover it here */
+  .suggest-picking .suggest-button { display: none; }
+  .suggest-banner { left: 50%; bottom: 40px; transform: translateX(-50%); }
   .list-button {
     left: 28px;
     top: 84px;
