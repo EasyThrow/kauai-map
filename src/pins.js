@@ -120,17 +120,20 @@ export function toGeoJSON(spots) {
       geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
       properties: {
         id: s.id,
-        name: s.name,
-        primary: s.primary,
+        name: s.name || s.id,
+        // Rows with an unknown category only reach the map in debug view; draw them as activity.
+        primary: CATEGORIES[s.primary] ? s.primary : 'activity',
         categories: s.categories.join('|'),
         verified: s.verified,
+        skipped: Boolean(s.skipped),
         offset: offsets[i],
       },
     })),
   };
 }
 
-export function addSpotLayers(map, spots) {
+// debug: dashed outline for unverified pins, red ring on skipped rows, name labels.
+export function addSpotLayers(map, spots, { debug = false } = {}) {
   map.addSource(SOURCE, {
     type: 'geojson',
     data: toGeoJSON(spots),
@@ -167,21 +170,66 @@ export function addSpotLayers(map, spots) {
     paint: { 'text-color': '#1a1a1a' },
   });
 
+  const pinImage = ['concat', 'pin-', ['get', 'primary']];
+  const offset = ['step', ['zoom'], ['literal', [0, 0]], CLUSTER_MAX_ZOOM + 1, ['get', 'offset']];
+
+  if (debug) {
+    // Red ring at the real coordinate of rows that viewers don't see.
+    map.addLayer({
+      id: 'spot-skipped',
+      type: 'circle',
+      source: SOURCE,
+      filter: ['all', ['!', ['has', 'point_count']], ['get', 'skipped']],
+      paint: {
+        'circle-radius': 16,
+        'circle-color': 'rgba(214, 40, 40, 0.15)',
+        'circle-stroke-color': '#d62828',
+        'circle-stroke-width': 3,
+      },
+    });
+  }
+
   map.addLayer({
     id: 'spot-pin',
     type: 'symbol',
     source: SOURCE,
     filter: ['!', ['has', 'point_count']],
     layout: {
-      'icon-image': ['concat', 'pin-', ['get', 'primary']],
+      'icon-image': debug
+        ? ['case', ['get', 'verified'], pinImage, ['concat', pinImage, '-unverified']]
+        : pinImage,
       'icon-anchor': 'bottom',
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
-      'icon-offset': ['step', ['zoom'], ['literal', [0, 0]], CLUSTER_MAX_ZOOM + 1, ['get', 'offset']],
+      'icon-offset': offset,
       // Home base sits under everything else.
       'symbol-sort-key': ['match', ['get', 'primary'], 'home', 0, 1],
     },
   });
+
+  if (debug) {
+    map.addLayer({
+      id: 'spot-label',
+      type: 'symbol',
+      source: SOURCE,
+      minzoom: 11,
+      filter: ['!', ['has', 'point_count']],
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': ['Noto Sans Bold'],
+        'text-size': 11,
+        'text-anchor': 'top',
+        'text-offset': [0, 0.3],
+        'text-max-width': 9,
+        'text-optional': true,
+      },
+      paint: {
+        'text-color': ['case', ['get', 'skipped'], '#d62828', '#1a1a1a'],
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.5,
+      },
+    });
+  }
 }
 
 // Replace the spots on the map (used by filters). Rebuilding the data, rather than

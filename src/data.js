@@ -13,7 +13,8 @@ function parseCsv(text) {
     skipEmptyLines: 'greedy',
     transformHeader: (h) => h.trim(),
   });
-  return data.map(parseRow);
+  // row = the Sheet row number (header is row 1), so warnings point at the right line.
+  return data.map((r, i) => ({ ...parseRow(r), row: i + 2 }));
 }
 
 // A Sheet error page or sign-in page comes back as HTML, not our CSV.
@@ -95,7 +96,10 @@ export function parseRow(row) {
     lng: num(get('lng')),
     coordPoint: get('coord_point'),
     verified: get('verified').toUpperCase() === 'Y',
+    verifiedRaw: get('verified'),
     driveMin: num(get('drive_min')),
+    driveRaw: get('drive_min'),
+    priceRaw: get('price_pp'),
     notes: list(get('notes'), '//'),
     tags: list(get('tags').toLowerCase(), '|'),
     pricePp: num(get('price_pp')),

@@ -8,6 +8,11 @@ import { createFilters, FILTER_KEYS } from './ui/filters.js';
 import { createList } from './ui/list.js';
 import { createSuggest } from './ui/suggest.js';
 import { SUGGEST_FORM_URL } from './config.js';
+import { validateSpots, logReport } from './validate.js';
+import { createDebugPanel } from './ui/debug.js';
+
+// ?debug=1 shows every row (skipped ones in red), dashed unverified pins and a checks panel.
+const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 
 // Zoom at which clusters have broken apart, so a deep-linked pin is visible.
 const SPOT_ZOOM = 15;
@@ -27,17 +32,28 @@ function activeFromHash() {
 }
 
 const isVisible = (spot, active) =>
-  spot.primary === 'home' || spot.categories.some((c) => active.has(c));
+  spot.skipped || spot.primary === 'home' || spot.categories.some((c) => active.has(c));
 
 map.on('load', async () => {
   try {
     const [{ spots, source }] = await Promise.all([loadSpots(), addPinImages(map)]);
     if (source === 'saved') showNote('Showing saved data');
-    const placeable = spots.filter((s) => s.lat != null && s.lng != null && s.id);
-    const spotsById = new Map(placeable.map((s) => [s.id, s]));
+    const report = validateSpots(spots);
+    logReport(report);
+    // Debug view also draws skipped rows that have usable coordinates.
+    const placeable = DEBUG
+      ? [
+          ...report.valid,
+          ...report.skipped
+            .map(({ spot }) => ({ ...spot, skipped: true }))
+            .filter((s) => s.lat != null && s.lng != null && s.id),
+        ]
+      : report.valid;
+    const spotsById = new Map();
+    for (const s of placeable) if (!spotsById.has(s.id)) spotsById.set(s.id, s);
     let active = activeFromHash();
     let visible = placeable.filter((s) => isVisible(s, active));
-    addSpotLayers(map, visible);
+    addSpotLayers(map, visible, { debug: DEBUG });
 
     const sheet = createSheet({ onClose: () => writeHash({ spot: null }) });
 
@@ -92,6 +108,7 @@ map.on('load', async () => {
       isBusy: suggest.isBusy,
     });
     wireTooltip(map, spotsById);
+    if (DEBUG) createDebugPanel({ report, onPick: (id) => select(id, { zoomIn: true }) });
 
     // Deep links: #spot=koloa-landing&cats=beach,snorkel
     const { spot } = readHash();
