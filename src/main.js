@@ -11,6 +11,7 @@ import { createTabs } from './ui/tabs.js';
 import { createPlanPanel } from './ui/plan.js';
 import { createWhosInPanel } from './ui/whosin.js';
 import { createStayPanel, parseStay } from './ui/stay.js';
+import { createConditionsPanel } from './ui/conditions.js';
 import { interestBlock } from './ui/interest.js';
 import { createInterestStore } from './interest.js';
 import { SUGGEST_FORM_URL, INTEREST_FORM_URL } from './config.js';
@@ -41,6 +42,17 @@ const INTEREST_SKIP = new Set(['home', 'essentials']);
 const planPanel = createPlanPanel({ onShowSpot: (id) => showSpotFromPlan?.(id) });
 const whosInPanel = createWhosInPanel({ onShowSpot: (id) => showSpotFromPlan?.(id) });
 const stayPanel = createStayPanel();
+const conditionsPanel = createConditionsPanel();
+// Forecast places: the home base (from the Sheet) and the north shore, which often has
+// different weather. Island-wide fallback until the Sheet loads.
+const NORTH_SHORE = { key: 'north', label: 'North shore', lat: 22.2, lng: -159.5 };
+conditionsPanel.setPlaces([{ key: 'island', label: 'Lihue', lat: 21.97, lng: -159.37 }, NORTH_SHORE]);
+if (readHash().tab === 'conditions') conditionsPanel.show();
+
+// Offline support (built site only; it would get in the way of live reloading in dev).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('Offline support unavailable', err)));
+}
 let showSpotFromPlan = null;
 let onTabShown = () => {};
 const tabs = createTabs({ active: readHash().tab, onChange: (id) => setTab(id) });
@@ -49,6 +61,7 @@ function setTab(id, { updateHash = true } = {}) {
   const tab = tabs.set(id);
   if (updateHash) writeHash({ tab: tab === 'map' ? null : tab, ...(tab !== 'map' ? { spot: null } : { event: null }) });
   onTabShown(tab);
+  if (tab === 'conditions') conditionsPanel.show();
 }
 
 // Filters from the URL (#cats=beach,hike); all on when absent.
@@ -111,6 +124,10 @@ const prepared = dataReady.then(([{ spots, source }, planTab, stayTab, interestT
   }
   // The countdown and "Up next" follow the clock.
   setInterval(() => document.body.classList.contains('tab-plan') && planPanel.refresh(nowEpoch()), 60000);
+
+  // Conditions: forecast for the home base area when the Sheet has one.
+  const home = [...spotsById.values()].find((s) => s.primary === 'home' && !s.skipped);
+  if (home) conditionsPanel.setPlaces([{ key: 'home', label: 'Home base', lat: home.lat, lng: home.lng }, NORTH_SHORE]);
 
   // Stay
   const stay = parseStay(stayTab.rows);

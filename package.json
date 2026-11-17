@@ -11,7 +11,8 @@
     "build": "vite build",
     "encrypt": "node scripts/encrypt.mjs",
     "preview": "vite preview",
-    "preview:locked": "vite build && node scripts/encrypt.mjs --preview && vite preview --outDir dist-locked --port 4173"
+    "preview:locked": "vite build && node scripts/encrypt.mjs --preview && vite preview --outDir dist-locked --port 4173",
+    "make-icons": "node scripts/make-icons.mjs"
   },
   "devDependencies": {
     "sharp": "0.34.5",

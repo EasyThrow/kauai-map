@@ -4,12 +4,14 @@ import mapIcon from '../../icons/map.svg?raw';
 import planIcon from '../../icons/calendar-event.svg?raw';
 import whoIcon from '../../icons/users.svg?raw';
 import stayIcon from '../../icons/bed.svg?raw';
+import conditionsIcon from '../../icons/sun.svg?raw';
 
 export const TABS = [
   { id: 'map', label: 'Map', icon: mapIcon },
   { id: 'plan', label: 'Plan', icon: planIcon },
   { id: 'who', label: "Who's in", icon: whoIcon },
   { id: 'stay', label: 'Stay', icon: stayIcon },
+  { id: 'conditions', label: 'Conditions', icon: conditionsIcon },
 ];
 
 export function createTabs({ active, onChange }) {

@@ -200,6 +200,27 @@ The form has three questions, named exactly: **Spot** (short answer), **First na
 answer) and **In or out** (multiple choice: `In`, `Out`). It must not collect emails or
 require sign-in.
 
+### Conditions, offline use and the Home Screen
+
+The **Conditions** tab needs no setup. It reads free public data when opened:
+
+- **Forecast** from the National Weather Service, for the home base area (the `home` spot's
+  coordinates) and the north shore
+- **Alerts** for Kauai (high surf, flood, wind)
+- **Surf** heights by shore, from the National Weather Service's Hawaii surf forecast
+- **Tides** from NOAA (the Nawiliwili station)
+- **Sunrise and sunset**, calculated on the phone
+- **Show live weather map** loads a Windy.com map only when tapped
+
+**Offline:** after one visit, the site opens with no signal and shows the last copy of the
+spots, plan, stay info and conditions it saw. The **Before you go** card at the bottom of
+Conditions has a **Save map for offline** button, which saves the whole island map (about
+5 MB), plus steps for adding the site to the Home Screen and downloading Kauai in Apple Maps
+or Google Maps for offline directions.
+
+On iPhone, the Home Screen app keeps its own storage, so it asks for the password once more.
+Tick **Remember this device**.
+
 ## 5. Check new pins with `?debug=1`
 
 Open the map with `?debug=1` at the end of the address, e.g.
@@ -252,6 +273,7 @@ npm install
 npm run dev              # local map at http://localhost:5173 (reads .env.local)
 npm run preview:locked   # the password-protected build at http://localhost:4173, password "preview"
 npm run bake-terrain     # re-render public/terrain/ (only if terrain colors or areas change)
+npm run make-icons       # re-render public/icons/ (Home Screen icons, cut from the terrain)
 ```
 
 | Path | What it is |
@@ -260,6 +282,7 @@ npm run bake-terrain     # re-render public/terrain/ (only if terrain colors or 
 | `styles/main.css` | All styling |
 | `icons/` | Tabler icons (MIT; see `icons/LICENSE`) |
 | `public/terrain/` | Baked terrain images |
+| `public/sw.js`, `public/manifest.webmanifest`, `public/icons/` | Offline support and the Home Screen app |
 | `staticrypt/password_template.html` | The password screen |
 | `scripts/` | Sheet snapshot, coordinate check, terrain baking, encryption |
 | `.github/workflows/deploy.yml` | Build, encrypt and deploy to GitHub Pages |
