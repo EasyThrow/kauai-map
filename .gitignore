@@ -13,3 +13,6 @@ data/verification-report.md
 
 # Project brief (contains the seed trip data) and the third-party style reference image
 Kauai Trip Map Project/
+data/stay*.csv
+data/interest*.csv
+data/*-test.csv

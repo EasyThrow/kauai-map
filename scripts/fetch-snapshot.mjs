@@ -24,10 +24,14 @@ if (!url) {
   process.exit(1);
 }
 
-async function download(tabUrl) {
+// Expected first column of each tab (same as src/data.js); anything else is an error page.
+const FIRST_COLUMN = { spots: 'id', plan: 'id', stay: 'name', interest: 'timestamp' };
+
+async function download(tabUrl, name) {
   const res = await fetch(tabUrl, { redirect: 'follow' });
   const text = await res.text();
-  return res.ok && /^﻿?\s*id\s*,/i.test(text) ? text : null;
+  const first = FIRST_COLUMN[name] || 'id';
+  return res.ok && new RegExp(`^\\uFEFF?\\s*"?${first}"?\\s*(,|\\r?\\n|$)`, 'i').test(text) ? text : null;
 }
 
 function save(name, text) {
@@ -38,7 +42,7 @@ function save(name, text) {
 }
 
 // Spots: required; the deploy stops if it can't be read.
-const spots = await download(url);
+const spots = await download(url, 'spots');
 if (!spots) {
   console.error('Sheet download failed or did not return the spots CSV.');
   console.error('Check the Sheet is published to the web as CSV, for the Spots tab.');
@@ -54,7 +58,7 @@ for (const [name, gid] of Object.entries(tabs)) {
   u.searchParams.set('gid', gid);
   u.searchParams.set('single', 'true');
   u.searchParams.set('output', 'csv');
-  const text = await download(u.href);
+  const text = await download(u.href, name);
   if (text) save(name, text);
   else console.warn(`::warning::The ${name} tab (gid ${gid}) could not be read; is it published?`);
 }

@@ -23,6 +23,7 @@ jobs:
     env:
       SHEET_CSV_URL: ${{ secrets.SHEET_CSV_URL }}
       SUGGEST_FORM_URL: ${{ secrets.SUGGEST_FORM_URL }}
+      INTEREST_FORM_URL: ${{ secrets.INTEREST_FORM_URL }}
     steps:
       - name: Check required secrets
         env:
@@ -32,6 +33,7 @@ jobs:
           [ -n "$SITE_PASSWORD" ] || { echo "::error::Repository secret SITE_PASSWORD is not set."; missing=1; }
           [ -n "$SHEET_CSV_URL" ] || { echo "::error::Repository secret SHEET_CSV_URL is not set."; missing=1; }
           [ -n "$SUGGEST_FORM_URL" ] || echo "::notice::SUGGEST_FORM_URL is not set; the Suggest button will be hidden."
+          [ -n "$INTEREST_FORM_URL" ] || echo "::notice::INTEREST_FORM_URL is not set; the I'm in buttons will be hidden."
           exit $missing
 
       - uses: actions/checkout@v7
@@ -53,6 +55,7 @@ jobs:
         env:
           VITE_SHEET_CSV_URL: ${{ secrets.SHEET_CSV_URL }}
           VITE_SUGGEST_FORM_URL: ${{ secrets.SUGGEST_FORM_URL }}
+          VITE_INTEREST_FORM_URL: ${{ secrets.INTEREST_FORM_URL }}
         run: npm run build
 
       - name: Encrypt (fails if any readable trip data remains)

@@ -44,13 +44,23 @@ export function tabCsvUrl(gid) {
   }
 }
 
-// Plan tab: live Sheet tab, or a local example file while developing.
-export const PLAN_URL = tabCsvUrl(SHEET_TABS.plan) || (import.meta.env.DEV ? '/data/plan-example.csv' : '');
+// Live Sheet tabs, or local example files while developing (gitignored).
+const devFile = (name) => (import.meta.env.DEV ? `/data/${name}-example.csv` : '');
+export const PLAN_URL = tabCsvUrl(SHEET_TABS.plan) || devFile('plan');
+export const STAY_URL = tabCsvUrl(SHEET_TABS.stay) || devFile('stay');
+// The "I'm interested" form's responses tab.
+export const INTEREST_URL = tabCsvUrl(SHEET_TABS.interest) || devFile('interest');
 
 // Google Form "pre-filled link" with the answers to the latitude and longitude
 // questions set to LAT and LNG. Same handling as the Sheet URL: .env.local locally,
 // SUGGEST_FORM_URL secret at deploy, never committed. No URL = no Suggest button.
 export const SUGGEST_FORM_URL = import.meta.env.VITE_SUGGEST_FORM_URL || '';
+
+// "I'm interested" Google Form pre-filled link, with the Spot answer set to SPOT, the
+// First name answer set to NAME and the In or out answer set to In. Same handling:
+// .env.local locally, INTEREST_FORM_URL secret at deploy, never committed.
+// No URL = the "I'm in" buttons are hidden (the Who's in tab still shows answers).
+export const INTEREST_FORM_URL = import.meta.env.VITE_INTEREST_FORM_URL || '';
 
 // Give up on the live Sheet after this long and show the saved snapshot.
 export const FETCH_TIMEOUT_MS = 6000;
@@ -62,6 +72,7 @@ export const CATEGORIES = {
   hike: { label: 'Hikes', color: '#8b5e34', icon: 'mountain' },
   activity: { label: 'Activities', color: '#8e4fb5', icon: 'ticket' },
   restaurant: { label: 'Food', color: '#d4473f', icon: 'tools-kitchen-2' },
+  essentials: { label: 'Essentials', color: '#5b6b78', icon: 'shopping-cart' },
   home: { label: 'Home base', color: '#23302a', icon: 'home' },
 };
 

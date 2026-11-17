@@ -22,8 +22,12 @@ So:
 
 - Never put the house address or anything private in the Sheet. The home base pin is a
   general area on purpose.
-- Publish only the **Spots** tab, never the whole document. Friends' suggestions stay private
-  in the **Suggestions** tab.
+- Publish only the tabs the site reads (**Spots**, **Plan**, **Stay** and **Who's in**), never
+  the whole document. Friends' suggestions stay private in the **Suggestions** tab.
+- **Stay** shows the address, so anyone with the Sheet link can see it. Never put door codes,
+  Wi-Fi or passwords anywhere in the Sheet. As a backstop, the site hides any Stay line that
+  mentions a code, Wi-Fi or a password and flags it in `?debug=1`.
+- **Who's in** shows first names and the time each pick was made.
 - If the link ever leaks: in the Sheet, File > Share > Publish to web > **Stop publishing**,
   then publish again to get a new link, and update the `SHEET_CSV_URL` secret (step 3).
 
@@ -68,7 +72,8 @@ or the logs.
 |---|---|---|
 | `SITE_PASSWORD` | The password friends type to open the map | Yes |
 | `SHEET_CSV_URL` | The published Sheet link from step 2 | Yes |
-| `SUGGEST_FORM_URL` | The form's pre-filled link | No; without it, the Suggest button is hidden |
+| `SUGGEST_FORM_URL` | The Suggest form's pre-filled link | No; without it, the Suggest button is hidden |
+| `INTEREST_FORM_URL` | The Who's in form's pre-filled link | No; without it, the I'm in buttons are hidden |
 
 **From the terminal (easiest).** In VS Code, open **Terminal > New Terminal** in this folder
 and run each line. Paste the value when asked; it stays hidden.
@@ -77,6 +82,7 @@ and run each line. Paste the value when asked; it stays hidden.
 gh secret set SITE_PASSWORD
 gh secret set SHEET_CSV_URL
 gh secret set SUGGEST_FORM_URL
+gh secret set INTEREST_FORM_URL
 ```
 
 **Or on github.com:**
@@ -86,7 +92,7 @@ gh secret set SUGGEST_FORM_URL
 2. In the left sidebar, under **Security**, click **Secrets and variables > Actions**.
 3. Click the green **New repository secret** button.
 4. **Name:** `SITE_PASSWORD`. **Secret:** the password. Click **Add secret**.
-5. Repeat for `SHEET_CSV_URL` and `SUGGEST_FORM_URL`.
+5. Repeat for `SHEET_CSV_URL`, `SUGGEST_FORM_URL` and `INTEREST_FORM_URL`.
 
 To check which secrets exist without showing their values, run `gh secret list`.
 
@@ -99,7 +105,7 @@ save, because Google caches the published copy, and anyone who refreshes sees th
 |---|---|
 | `id` | Short, unique, lowercase-with-dashes, e.g. `example-shrimp-truck`. Used in shared links. If you leave it blank, it's made from the name. |
 | `name` | Display name |
-| `primary_category` | `beach`, `snorkel`, `hike`, `activity`, `restaurant` or `home`. Decides the pin symbol. |
+| `primary_category` | `beach`, `snorkel`, `hike`, `activity`, `restaurant`, `essentials` (grocery, gas, pharmacy, rentals) or `home`. Decides the pin symbol. |
 | `categories` | All of its categories, separated by `\|`, e.g. `beach\|snorkel` |
 | `region` | `south`, `west`, `east`, `north` or `central` |
 | `lat`, `lng` | Exact coordinates (see below) |
@@ -161,6 +167,38 @@ show up about 5 minutes after you save, just like spots. All times are Hawaii ti
 
 Day 1 is the earliest date in the tab. Before the trip, the Plan shows a countdown. During the trip,
 it shows **Up next** and opens at today.
+
+### The Stay tab
+
+The site's **Stay** tab reads the **Stay** tab of the Sheet. Until a row is added, it says
+"Not booked yet". Add a second row if the trip moves to another place.
+
+| Column | Notes |
+|---|---|
+| `name` | e.g. `Beach house` |
+| `address` | Street address. Used for **Copy address**, and for directions when there are no coordinates. |
+| `lat`, `lng` | Optional exact coordinates (paste the Google Maps pair into `lat`). More accurate directions. |
+| `check_in`, `check_in_time` | e.g. `2/13/2027` and `4:00 PM` |
+| `check_out`, `check_out_time` | e.g. `2/18/2027` and `10:00 AM` |
+| `sleeping` | Who sleeps where, separated by ` // `, e.g. `Main: Sam + Alex // Loft: Jordan` |
+| `parking` | Parking notes |
+| `host` | Host's first name, if useful |
+| `notes` | Short bullets separated by ` // ` |
+| `links` | `Label|URL` pairs separated by ` ;; `, e.g. the listing |
+| `photo_url` | Optional photo of the place |
+
+**Never** add door codes, Wi-Fi details or passwords. Share those in the group chat.
+
+### Who's in (the interest form)
+
+Friends tap **I'm in** on a spot. The site sends their answer to a Google Form and remembers
+their first name on that phone. The form's responses tab is published with the Sheet, and the
+**Who's in** tab shows each spot's people, most popular first. A person's latest answer for a
+spot counts, so tapping again removes them. New picks show for everyone in about 5 minutes.
+
+The form has three questions, named exactly: **Spot** (short answer), **First name** (short
+answer) and **In or out** (multiple choice: `In`, `Out`). It must not collect emails or
+require sign-in.
 
 ## 5. Check new pins with `?debug=1`
 

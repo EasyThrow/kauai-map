@@ -82,6 +82,12 @@ export function createFilters({ active, onChange, days = [], day = null, onDayCh
   sync();
   const host = document.querySelector('.top-bar') || document.body;
   host.append(bar, reset);
+  // On desktop the chips can wrap to a second row; the list sidebar sits below them.
+  if (host !== document.body && 'ResizeObserver' in window) {
+    new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--top-bar-bottom', `${Math.round(host.getBoundingClientRect().bottom)}px`);
+    }).observe(host);
+  }
   return {
     set(next) {
       active = new Set(next);

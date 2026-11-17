@@ -8,6 +8,7 @@ import mountain from '../icons/mountain.svg?raw';
 import ticket from '../icons/ticket.svg?raw';
 import kitchen from '../icons/tools-kitchen-2.svg?raw';
 import home from '../icons/home.svg?raw';
+import cart from '../icons/shopping-cart.svg?raw';
 
 export const ICON_SVG = {
   beach,
@@ -16,6 +17,7 @@ export const ICON_SVG = {
   ticket,
   'tools-kitchen-2': kitchen,
   home,
+  'shopping-cart': cart,
 };
 
 export const SOURCE = 'spots';

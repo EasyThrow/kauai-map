@@ -52,3 +52,9 @@ export function safeUrl(url) {
     return null;
   }
 }
+
+// Directions to a street address (when there are no coordinates).
+export const directionsToAddress = (address) =>
+  `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+export const appleMapsToAddress = (address) =>
+  `https://maps.apple.com/?daddr=${encodeURIComponent(address)}&dirflg=d`;

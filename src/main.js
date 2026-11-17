@@ -1,5 +1,5 @@
 import { createMap } from './map.js';
-import { loadSpots, loadPlanRows } from './data.js';
+import { loadSpots, loadPlanRows, loadStayRows, loadInterestRows } from './data.js';
 import { addPinImages, addSpotLayers, setSpots, wireSpotClicks } from './pins.js';
 import { readHash, writeHash, onHashChange } from './hash.js';
 import { createSheet } from './ui/sheet.js';
@@ -9,7 +9,11 @@ import { createList } from './ui/list.js';
 import { createSuggest } from './ui/suggest.js';
 import { createTabs } from './ui/tabs.js';
 import { createPlanPanel } from './ui/plan.js';
-import { SUGGEST_FORM_URL } from './config.js';
+import { createWhosInPanel } from './ui/whosin.js';
+import { createStayPanel, parseStay } from './ui/stay.js';
+import { interestBlock } from './ui/interest.js';
+import { createInterestStore } from './interest.js';
+import { SUGGEST_FORM_URL, INTEREST_FORM_URL } from './config.js';
 import { validateSpots, logReport } from './validate.js';
 import { parsePlan, tripSummary, nowEpoch, formatDate } from './plan.js';
 import { createDebugPanel } from './ui/debug.js';
@@ -28,10 +32,15 @@ const map = createMap('map');
 if (import.meta.env.DEV) window.__map = map;
 
 // Start downloading the Sheet tabs right away, alongside the map style.
-const dataReady = Promise.all([loadSpots(), loadPlanRows()]);
+const dataReady = Promise.all([loadSpots(), loadPlanRows(), loadStayRows(), loadInterestRows()]);
+
+// Spots people can say they're in for (not the house or the grocery store).
+const INTEREST_SKIP = new Set(['home', 'essentials']);
 
 // Tabs and the plan panel exist from the start; the map stays rendered underneath.
 const planPanel = createPlanPanel({ onShowSpot: (id) => showSpotFromPlan?.(id) });
+const whosInPanel = createWhosInPanel({ onShowSpot: (id) => showSpotFromPlan?.(id) });
+const stayPanel = createStayPanel();
 let showSpotFromPlan = null;
 let onTabShown = () => {};
 const tabs = createTabs({ active: readHash().tab, onChange: (id) => setTab(id) });
@@ -56,8 +65,8 @@ const isVisible = (spot, active, daySpots) =>
 
 // Spots + plan, checked and cross-linked. Doesn't need the map, so the Plan tab works
 // even if the map is slow or can't start.
-const prepared = dataReady.then(([{ spots, source }, planTab]) => {
-  if (source === 'saved' || planTab.source === 'saved') showNote('Showing saved data');
+const prepared = dataReady.then(([{ spots, source }, planTab, stayTab, interestTab]) => {
+  if ([source, planTab.source, stayTab.source, interestTab.source].includes('saved')) showNote('Showing saved data');
   const report = validateSpots(spots);
   logReport(report);
 
@@ -103,8 +112,39 @@ const prepared = dataReady.then(([{ spots, source }, planTab]) => {
   // The countdown and "Up next" follow the clock.
   setInterval(() => document.body.classList.contains('tab-plan') && planPanel.refresh(nowEpoch()), 60000);
 
-  return { report, placeable, spotsById, events, planWarnings, spotsByDay, plannedBySpot, dayOptions };
+  // Stay
+  const stay = parseStay(stayTab.rows);
+  stayPanel.render(stay.places);
+
+  // Who's in
+  const interestable = new Map([...spotsById].filter(([, s]) => !INTEREST_SKIP.has(s.primary) && !s.skipped));
+  const interest = createInterestStore({
+    formUrl: INTEREST_FORM_URL,
+    spotsById: interestable,
+    rows: interestTab.rows,
+    onChange: () => whosInPanel.refresh(),
+  });
+  whosInPanel.render({ store: interest, spotsById: interestable, plannedBySpot });
+
+  const sideWarnings = [...stay.warnings, ...interest.warnings];
+  for (const w of sideWarnings) console.info(`${w.label} row ${w.row}: ${w.msg}`);
+  const otherWarnings = [
+    ...planWarnings.map((w) => ({ ...w, label: `Plan: ${w.label}` })),
+    ...sideWarnings,
+  ];
+
+  return { report, placeable, spotsById, events, otherWarnings, spotsByDay, plannedBySpot, dayOptions, interest, interestable };
 });
+
+// The Who's in tab re-reads the Sheet when opened (at most once a minute), so new
+// picks from friends show without reloading the page.
+let interestFetchedAt = Date.now();
+async function refreshInterest() {
+  if (Date.now() - interestFetchedAt < 60000) return;
+  interestFetchedAt = Date.now();
+  const [{ interest }, tab] = await Promise.all([prepared, loadInterestRows({ saved: false })]);
+  if (tab.source === 'live') interest.update(tab.rows);
+}
 prepared.catch((err) => {
   console.error(err);
   showNote('Trip data could not be loaded. Try refreshing.');
@@ -112,7 +152,7 @@ prepared.catch((err) => {
 
 map.on('load', async () => {
   try {
-    const [{ report, placeable, spotsById, events, planWarnings, spotsByDay, plannedBySpot, dayOptions }] =
+    const [{ report, placeable, spotsById, events, otherWarnings, spotsByDay, plannedBySpot, dayOptions, interest, interestable }] =
       await Promise.all([prepared, addPinImages(map)]);
 
     // --- Map ------------------------------------------------------------------------
@@ -134,6 +174,7 @@ map.on('load', async () => {
           writeHash({ event: eventId });
           planPanel.scrollToEvent(eventId);
         },
+        interest: interestable.has(id) ? () => interestBlock(id, interest, { compact: true }) : null,
       });
       writeHash({ spot: id });
       const { bottom, right } = sheet.obscured();
@@ -199,7 +240,7 @@ map.on('load', async () => {
           ...report,
           warnings: [
             ...report.warnings,
-            ...planWarnings.map((w) => ({ ...w, id: null, level: 'warn', label: `Plan: ${w.label}` })),
+            ...otherWarnings.map((w) => ({ ...w, id: null, level: 'warn' })),
           ],
         },
         onPick: (id) => select(id, { zoomIn: true }),
@@ -225,6 +266,7 @@ map.on('load', async () => {
         sheet.hide({ silent: true });
         if (!DESKTOP.matches) list.setOpen(false);
       } else map.resize();
+      if (tab === 'who') refreshInterest().catch((err) => console.warn("Who's in refresh failed", err));
       if (tab === 'plan') {
         planPanel.refresh(nowEpoch());
         if (!readHash().event) planPanel.scrollToToday();

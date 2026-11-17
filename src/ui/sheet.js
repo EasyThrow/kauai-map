@@ -56,7 +56,8 @@ function linkButton(label, href, primary) {
 }
 
 // planned: [{ event, dayNumber }] for plan items at this spot; onPlanEvent opens one.
-function renderSpot(spot, { planned = [], onPlanEvent } = {}) {
+// interest: optional () => element with who's in and the I'm in button.
+function renderSpot(spot, { planned = [], onPlanEvent, interest } = {}) {
   const frag = document.createDocumentFragment();
 
   if (spot.photo) {
@@ -114,6 +115,8 @@ function renderSpot(spot, { planned = [], onPlanEvent } = {}) {
     b.addEventListener('click', () => onPlanEvent?.(event.id));
     body.append(b);
   }
+
+  if (interest) body.append(interest());
 
   if (spot.notes.length) {
     const ul = el('ul', 'notes');

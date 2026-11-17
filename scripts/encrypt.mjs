@@ -70,6 +70,8 @@ const leaks = [
   process.env.VITE_SHEET_CSV_URL,
   process.env.SUGGEST_FORM_URL,
   process.env.VITE_SUGGEST_FORM_URL,
+  process.env.INTEREST_FORM_URL,
+  process.env.VITE_INTEREST_FORM_URL,
   'docs.google.com/spreadsheets',
   'docs.google.com/forms',
   'primary_category',

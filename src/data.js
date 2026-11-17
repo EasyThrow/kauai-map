@@ -1,9 +1,9 @@
 /* global Papa */
-import { DATA_URL, PLAN_URL, FETCH_TIMEOUT_MS } from './config.js';
+import { DATA_URL, PLAN_URL, STAY_URL, INTEREST_URL, FETCH_TIMEOUT_MS } from './config.js';
 
 // Snapshots of the Sheet tabs downloaded by `npm run snapshot` at deploy time and
 // bundled inside the (encrypted) page. Missing locally until a snapshot has been taken.
-const SNAPSHOTS = import.meta.glob('../data/{spots,plan}.csv', { query: '?raw', import: 'default', eager: true });
+const SNAPSHOTS = import.meta.glob('../data/{spots,plan,stay,interest}.csv', { query: '?raw', import: 'default', eager: true });
 const snapshot = (name) => SNAPSHOTS[`../data/${name}.csv`];
 
 // Rows as plain objects keyed by trimmed header, each with its Sheet row number
@@ -17,18 +17,19 @@ export function parseCsvRows(text) {
   return data.map((r, i) => ({ ...r, __row: i + 2 }));
 }
 
-// A Sheet error page or sign-in page comes back as HTML, not our CSV.
-// Every tab the site reads starts with an "id" column.
-const looksLikeOurCsv = (text) => /^﻿?\s*id\s*,/i.test(text);
+// A Sheet error page or sign-in page comes back as HTML, not our CSV, so each tab is
+// checked for its expected first column.
+export const FIRST_COLUMN = { spots: 'id', plan: 'id', stay: 'name', interest: 'timestamp' };
+const looksLikeOurCsv = (text, first) => new RegExp(`^\\uFEFF?\\s*"?${first}"?\\s*(,|\\r?\\n|$)`, 'i').test(text);
 
-async function fetchLive(url) {
+async function fetchLive(url, first) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    if (!looksLikeOurCsv(text)) throw new Error('Response is not a CSV with an id column');
+    if (!looksLikeOurCsv(text, first)) throw new Error(`Response is not a CSV starting with a ${first} column`);
     return text;
   } finally {
     clearTimeout(timer);
@@ -36,16 +37,16 @@ async function fetchLive(url) {
 }
 
 // Live tab first, saved snapshot second. Returns { rows, source: 'live' | 'saved' | 'none' }.
-async function loadTab(url, name) {
+export async function loadTab(url, name, { saved = true } = {}) {
   if (url) {
     try {
-      return { rows: parseCsvRows(await fetchLive(url)), source: 'live' };
+      return { rows: parseCsvRows(await fetchLive(url, FIRST_COLUMN[name] || 'id')), source: 'live' };
     } catch (err) {
       console.warn(`Live ${name} data unavailable, using saved snapshot.`, err.message);
     }
   }
-  const saved = snapshot(name);
-  return saved ? { rows: parseCsvRows(saved), source: 'saved' } : { rows: [], source: 'none' };
+  const copy = saved && snapshot(name);
+  return copy ? { rows: parseCsvRows(copy), source: 'saved' } : { rows: [], source: 'none' };
 }
 
 // Returns { spots, source } where source is 'live' (Sheet) or 'saved' (snapshot).
@@ -59,6 +60,11 @@ export async function loadSpots(url = DATA_URL) {
 export async function loadPlanRows(url = PLAN_URL) {
   return loadTab(url, 'plan');
 }
+
+export const loadStayRows = (url = STAY_URL) => loadTab(url, 'stay');
+
+// Re-fetched when the Who's in tab opens; the saved copy is only used on first load.
+export const loadInterestRows = ({ saved = true } = {}) => loadTab(INTEREST_URL, 'interest', { saved });
 
 const list = (value, sep) =>
   (value || '')
