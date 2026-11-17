@@ -1,10 +1,12 @@
-// Category filter chips, pinned along the top. Home base is always shown, so it has no chip.
+// Category filter chips, pinned along the top, plus an optional "Day" picker that limits
+// the map to one day of the plan. Home base is always shown, so it has no chip.
 import { CATEGORIES } from '../config.js';
 import { ICON_SVG } from '../pins.js';
 
 export const FILTER_KEYS = Object.keys(CATEGORIES).filter((k) => k !== 'home');
 
-export function createFilters({ active, onChange }) {
+// days: [{ value: '3', label: 'Day 3 · Sat, Feb 15' }]; day: the selected value or null.
+export function createFilters({ active, onChange, days = [], day = null, onDayChange }) {
   const bar = document.createElement('nav');
   bar.className = 'filters';
   bar.setAttribute('aria-label', 'Show categories');
@@ -29,7 +31,26 @@ export function createFilters({ active, onChange }) {
     bar.append(chip);
   }
 
-  // "Reset filters": only shown while at least one category is off.
+  // Day picker: only when the plan links spots to days.
+  let select = null;
+  if (days.length) {
+    const wrap = document.createElement('label');
+    wrap.className = 'chip chip-day';
+    select = document.createElement('select');
+    select.setAttribute('aria-label', 'Show one day of the plan');
+    select.append(new Option('All days', ''));
+    for (const d of days) select.append(new Option(d.label, d.value));
+    select.value = day ?? '';
+    select.addEventListener('change', () => {
+      day = select.value || null;
+      sync();
+      onDayChange?.(day);
+    });
+    wrap.append(select);
+    bar.append(wrap);
+  }
+
+  // "Reset filters": only shown while a category is off or a day is picked.
   const reset = document.createElement('button');
   reset.type = 'button';
   reset.className = 'filters-reset';
@@ -38,8 +59,11 @@ export function createFilters({ active, onChange }) {
   reset.append(document.createTextNode('Reset filters'));
   reset.addEventListener('click', () => {
     active = new Set(FILTER_KEYS);
+    const hadDay = day != null;
+    day = null;
     sync();
     onChange(new Set(active));
+    if (hadDay) onDayChange?.(null);
   });
 
   function sync() {
@@ -48,7 +72,11 @@ export function createFilters({ active, onChange }) {
       chip.classList.toggle('on', on);
       chip.setAttribute('aria-pressed', String(on));
     }
-    reset.hidden = active.size === FILTER_KEYS.length;
+    if (select) {
+      select.value = day ?? '';
+      select.parentElement.classList.toggle('on', day != null);
+    }
+    reset.hidden = active.size === FILTER_KEYS.length && day == null;
   }
 
   sync();
@@ -57,6 +85,10 @@ export function createFilters({ active, onChange }) {
   return {
     set(next) {
       active = new Set(next);
+      sync();
+    },
+    setDay(next) {
+      day = next ?? null;
       sync();
     },
   };

@@ -7,6 +7,7 @@ dist-locked/
 # Trip data stays out of the public repo
 data/seed.csv
 data/spots.csv
+data/plan*.csv
 # Lists every spot with coordinates, so it stays local too
 data/verification-report.md
 

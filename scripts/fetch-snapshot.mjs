@@ -24,16 +24,37 @@ if (!url) {
   process.exit(1);
 }
 
-const res = await fetch(url, { redirect: 'follow' });
-const text = await res.text();
-if (!res.ok || !/^﻿?\s*id\s*,/i.test(text)) {
-  console.error(`Sheet download failed (HTTP ${res.status}) or did not return the spots CSV.`);
+async function download(tabUrl) {
+  const res = await fetch(tabUrl, { redirect: 'follow' });
+  const text = await res.text();
+  return res.ok && /^﻿?\s*id\s*,/i.test(text) ? text : null;
+}
+
+function save(name, text) {
+  const out = resolve(root, `data/${name}.csv`);
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, text);
+  console.log(`Saved snapshot: ${text.trim().split(/\r?\n/).length - 1} rows -> data/${name}.csv`);
+}
+
+// Spots: required; the deploy stops if it can't be read.
+const spots = await download(url);
+if (!spots) {
+  console.error('Sheet download failed or did not return the spots CSV.');
   console.error('Check the Sheet is published to the web as CSV, for the Spots tab.');
   process.exit(1);
 }
+save('spots', spots);
 
-const rows = text.trim().split(/\r?\n/).length - 1;
-const out = resolve(root, 'data/spots.csv');
-mkdirSync(dirname(out), { recursive: true });
-writeFileSync(out, text);
-console.log(`Saved snapshot: ${rows} rows -> data/spots.csv`);
+// Other tabs (src/sheet-tabs.json): optional; a missing one just has no backup copy.
+const tabs = JSON.parse(readFileSync(resolve(root, 'src/sheet-tabs.json'), 'utf8'));
+for (const [name, gid] of Object.entries(tabs)) {
+  if (!gid) continue;
+  const u = new URL(url);
+  u.searchParams.set('gid', gid);
+  u.searchParams.set('single', 'true');
+  u.searchParams.set('output', 'csv');
+  const text = await download(u.href);
+  if (text) save(name, text);
+  else console.warn(`::warning::The ${name} tab (gid ${gid}) could not be read; is it published?`);
+}

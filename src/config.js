@@ -24,6 +24,29 @@ export const MAX_BOUNDS = [
 export const SHEET_CSV_URL = import.meta.env.VITE_SHEET_CSV_URL || '';
 export const DATA_URL = SHEET_CSV_URL || (import.meta.env.DEV ? '/data/seed.csv' : '');
 
+// Other tabs of the same published Sheet. Each published tab has the same link with a
+// different gid (the number after "gid=" when the tab is open in Google Sheets).
+// A gid alone reveals nothing, so these live in the code (src/sheet-tabs.json, which the
+// snapshot script reads too).
+import SHEET_TABS from './sheet-tabs.json';
+export { SHEET_TABS };
+
+export function tabCsvUrl(gid) {
+  if (!SHEET_CSV_URL || !gid) return '';
+  try {
+    const u = new URL(SHEET_CSV_URL);
+    u.searchParams.set('gid', gid);
+    u.searchParams.set('single', 'true');
+    u.searchParams.set('output', 'csv');
+    return u.href;
+  } catch {
+    return '';
+  }
+}
+
+// Plan tab: live Sheet tab, or a local example file while developing.
+export const PLAN_URL = tabCsvUrl(SHEET_TABS.plan) || (import.meta.env.DEV ? '/data/plan-example.csv' : '');
+
 // Google Form "pre-filled link" with the answers to the latitude and longitude
 // questions set to LAT and LNG. Same handling as the Sheet URL: .env.local locally,
 // SUGGEST_FORM_URL secret at deploy, never committed. No URL = no Suggest button.

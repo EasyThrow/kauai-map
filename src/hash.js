@@ -1,4 +1,4 @@
-// URL hash state, e.g. #spot=example-beach&cats=beach,snorkel
+// URL hash state, e.g. #spot=example-beach&cats=beach,snorkel, #day=3, #tab=plan&event=x
 // Kept in the hash (not localStorage) so a texted link opens the same view.
 
 function params() {
@@ -9,8 +9,11 @@ export function readHash() {
   const p = params();
   const cats = p.get('cats');
   return {
+    tab: p.get('tab') || 'map',
     spot: p.get('spot') || null,
     cats: cats == null ? null : cats.split(',').filter(Boolean),
+    day: p.get('day') || null,
+    event: p.get('event') || null,
   };
 }
 

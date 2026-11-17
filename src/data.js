@@ -1,24 +1,25 @@
 /* global Papa */
-import { DATA_URL, FETCH_TIMEOUT_MS } from './config.js';
+import { DATA_URL, PLAN_URL, FETCH_TIMEOUT_MS } from './config.js';
 
-// Snapshot of the Sheet downloaded by `npm run snapshot` at deploy time and bundled
-// inside the (encrypted) page. Missing locally until a snapshot has been taken.
-const SNAPSHOT = Object.values(
-  import.meta.glob('../data/spots.csv', { query: '?raw', import: 'default', eager: true }),
-)[0];
+// Snapshots of the Sheet tabs downloaded by `npm run snapshot` at deploy time and
+// bundled inside the (encrypted) page. Missing locally until a snapshot has been taken.
+const SNAPSHOTS = import.meta.glob('../data/{spots,plan}.csv', { query: '?raw', import: 'default', eager: true });
+const snapshot = (name) => SNAPSHOTS[`../data/${name}.csv`];
 
-function parseCsv(text) {
+// Rows as plain objects keyed by trimmed header, each with its Sheet row number
+// (header is row 1) so warnings point at the right line.
+export function parseCsvRows(text) {
   const { data } = Papa.parse(text, {
     header: true,
     skipEmptyLines: 'greedy',
     transformHeader: (h) => h.trim(),
   });
-  // row = the Sheet row number (header is row 1), so warnings point at the right line.
-  return data.map((r, i) => ({ ...parseRow(r), row: i + 2 }));
+  return data.map((r, i) => ({ ...r, __row: i + 2 }));
 }
 
 // A Sheet error page or sign-in page comes back as HTML, not our CSV.
-const looksLikeSpotsCsv = (text) => /^﻿?\s*id\s*,/i.test(text);
+// Every tab the site reads starts with an "id" column.
+const looksLikeOurCsv = (text) => /^﻿?\s*id\s*,/i.test(text);
 
 async function fetchLive(url) {
   const ctrl = new AbortController();
@@ -27,24 +28,36 @@ async function fetchLive(url) {
     const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    if (!looksLikeSpotsCsv(text)) throw new Error('Response is not the spots CSV');
+    if (!looksLikeOurCsv(text)) throw new Error('Response is not a CSV with an id column');
     return text;
   } finally {
     clearTimeout(timer);
   }
 }
 
-// Returns { spots, source } where source is 'live' (Sheet) or 'saved' (snapshot).
-export async function loadSpots(url = DATA_URL) {
+// Live tab first, saved snapshot second. Returns { rows, source: 'live' | 'saved' | 'none' }.
+async function loadTab(url, name) {
   if (url) {
     try {
-      return { spots: parseCsv(await fetchLive(url)), source: 'live' };
+      return { rows: parseCsvRows(await fetchLive(url)), source: 'live' };
     } catch (err) {
-      console.warn('Live spot data unavailable, using saved snapshot.', err.message);
+      console.warn(`Live ${name} data unavailable, using saved snapshot.`, err.message);
     }
   }
-  if (SNAPSHOT) return { spots: parseCsv(SNAPSHOT), source: 'saved' };
-  throw new Error('No spot data: the Sheet could not be loaded and no saved snapshot exists.');
+  const saved = snapshot(name);
+  return saved ? { rows: parseCsvRows(saved), source: 'saved' } : { rows: [], source: 'none' };
+}
+
+// Returns { spots, source } where source is 'live' (Sheet) or 'saved' (snapshot).
+export async function loadSpots(url = DATA_URL) {
+  const { rows, source } = await loadTab(url, 'spots');
+  if (source === 'none') throw new Error('No spot data: the Sheet could not be loaded and no saved snapshot exists.');
+  return { spots: rows.map((r) => ({ ...parseRow(r), row: r.__row })), source };
+}
+
+// Raw Plan rows; src/plan.js turns them into events. An unset Plan tab is simply empty.
+export async function loadPlanRows(url = PLAN_URL) {
+  return loadTab(url, 'plan');
 }
 
 const list = (value, sep) =>
@@ -75,7 +88,7 @@ export function splitCoordPair(text) {
 }
 
 export function parseRow(row) {
-  const r = Object.fromEntries(Object.entries(row).map(([k, v]) => [k, (v ?? '').trim()]));
+  const r = Object.fromEntries(Object.entries(row).map(([k, v]) => [k, String(v ?? '').trim()]));
   const pair = splitCoordPair(r.lat ?? '');
   if (pair) Object.assign(r, pair);
   const get = (k) => r[k] ?? '';

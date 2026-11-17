@@ -5,6 +5,8 @@
   --card: #ffffff;
   --border: #d5ddd6;
   --frame: #2b2f2c;
+  /* Phone tab bar height; 0 on desktop, where tabs sit at the top */
+  --nav-h: calc(58px + env(safe-area-inset-bottom));
   --font: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -21,7 +23,7 @@ html, body {
 
 #map {
   position: fixed;
-  inset: 0;
+  inset: 0 0 var(--nav-h) 0;
 }
 
 /* Title + filter chips. Phone: stacked, chips scroll sideways. Desktop: one row. */
@@ -143,7 +145,7 @@ html, body {
   position: fixed;
   left: 50%;
   /* Sits above the map credits, which must stay readable. */
-  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  bottom: calc(var(--nav-h) + 52px); /* above the tab bar and the map credits */
   transform: translateX(-50%);
   z-index: 3;
   display: inline-flex;
@@ -252,7 +254,7 @@ html, body {
 .suggest-button {
   position: fixed;
   left: 16px;
-  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  bottom: calc(var(--nav-h) + 52px); /* above the tab bar and the map credits */
   z-index: 3;
   display: inline-flex;
   align-items: center;
@@ -274,7 +276,7 @@ html, body {
 .suggest-banner {
   position: fixed;
   left: 16px; /* clear of the zoom buttons on the right */
-  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  bottom: calc(var(--nav-h) + 52px); /* above the tab bar and the map credits */
   z-index: 6;
   display: none;
   align-items: center;
@@ -520,8 +522,248 @@ button.btn { font-family: var(--font); cursor: pointer; }
 }
 .spot-tooltip strong { display: block; font-size: 14px; }
 
+/* ---------- Tabs ---------- */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  height: var(--nav-h);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #fff;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 700 12px var(--font);
+  cursor: pointer;
+}
+.tab-icon { display: grid; place-items: center; }
+.tab-icon svg { width: 24px; height: 24px; }
+.tab.on { color: var(--accent); }
+.tab.on .tab-icon svg { stroke-width: 2.4; }
+
+/* Map-only controls step aside on other tabs (the map keeps its state underneath). */
+body:not(.tab-map) .top-bar,
+body:not(.tab-map) .list-button,
+body:not(.tab-map) .list-panel,
+body:not(.tab-map) .suggest-button,
+body:not(.tab-map) .suggest-banner,
+body:not(.tab-map) .sheet { display: none; }
+
+.tab-panel {
+  position: fixed;
+  inset: 0 0 var(--nav-h) 0;
+  z-index: 2;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: #f4f1ea;
+}
+.tab-panel[hidden] { display: none; }
+
+/* ---------- Plan ---------- */
+.plan-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 16px) 16px 32px;
+}
+.plan-heading { margin: 4px 0 12px; font-size: 28px; font-weight: 800; color: var(--accent); }
+.plan-empty {
+  padding: 20px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--muted);
+}
+.plan-empty-title { margin: 0 0 4px; font-size: 18px; font-weight: 800; color: var(--ink); }
+
+.plan-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(19, 128, 102, 0.25);
+}
+.plan-hero p { margin: 0; }
+.plan-hero-big { font-size: 34px; font-weight: 800; line-height: 1.1; }
+.plan-hero-sub { font-size: 15px; font-weight: 700; opacity: 0.92; }
+.plan-upnext {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  font-family: var(--font);
+  cursor: pointer;
+}
+.plan-upnext-label { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.plan-upnext-title { font-size: 18px; font-weight: 800; }
+.plan-upnext-when { font-size: 14px; font-weight: 700; color: var(--muted); }
+.plan-hero .plan-all { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.7); color: #fff; }
+
+.btn-icon { display: inline-grid; place-items: center; margin-right: 6px; }
+.btn-icon svg { width: 18px; height: 18px; }
+
+.plan-tobook {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fdf1e4;
+  border: 1px solid #f2d2ab;
+}
+.plan-tobook h2 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: #8a4a0b; }
+.plan-tobook ul { margin: 0; padding: 0; list-style: none; }
+.plan-tobook-item {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid #f2d2ab;
+  background: none;
+  text-align: left;
+  font: 700 15px var(--font);
+  color: var(--ink);
+  cursor: pointer;
+}
+.plan-tobook li:first-child .plan-tobook-item { border-top: 0; }
+.plan-tobook-when { font-size: 13px; color: #8a4a0b; }
+.plan-tobook-when.soon, .plan-tobook-when.overdue { color: #b42318; font-weight: 800; }
+
+.plan-day { margin-top: 20px; }
+.plan-day-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 -16px 8px;
+  padding: 8px 16px;
+  background: #f4f1ea;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.plan-day-num { font-size: 20px; font-weight: 800; color: var(--ink); }
+.plan-day.today .plan-day-num::after {
+  content: 'Today';
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.plan-day-list { display: grid; gap: 10px; }
+
+.plan-card {
+  padding: 14px 14px 12px;
+  border: 1px solid var(--border);
+  border-left: 5px solid #8a968e;
+  border-radius: 14px;
+  background: #fff;
+  scroll-margin: 56px;
+}
+.plan-card.status-booked { border-left-color: var(--accent); }
+.plan-card.status-to-book { border-left-color: #d9822b; }
+.plan-card.highlight { box-shadow: 0 0 0 3px rgba(19, 128, 102, 0.35); }
+.plan-card-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.plan-time { font-size: 14px; font-weight: 800; color: var(--muted); }
+.plan-status { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; background: #eef1ef; color: #4d5a52; }
+.plan-status.status-booked { background: #e3f2ec; color: #0f6b55; }
+.plan-status.status-to-book { background: #fdf1e4; color: #8a4a0b; }
+.plan-title { margin: 6px 0 8px; font-size: 19px; font-weight: 800; line-height: 1.25; }
+.plan-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.plan-facts dt { color: var(--muted); font-weight: 700; }
+.plan-facts dd { margin: 0; }
+.plan-card .actions { margin-top: 10px; }
+
+/* "In the plan" line in a spot's popup */
+.planned {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  margin: 2px 0 10px;
+  padding: 8px 12px;
+  border: 1px solid #c3e2d6;
+  border-radius: 10px;
+  background: #e8f4ef;
+  text-align: left;
+  font: 700 14px var(--font);
+  color: var(--ink);
+  cursor: pointer;
+}
+.planned-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+
+/* Day picker chip */
+.chip-day { padding: 0 6px 0 12px; }
+.chip-day select {
+  border: 0;
+  background: transparent;
+  font: 700 14px var(--font);
+  color: inherit;
+  min-height: 36px;
+  cursor: pointer;
+}
+.chip-day.on { border-color: var(--accent); color: var(--ink); background: #e8f4ef; }
+
 /* Desktop: thin dark frame like the reference, sheet becomes a side panel */
 @media (min-width: 900px) {
+  :root { --nav-h: 0px; }
+  .tabbar {
+    left: auto;
+    right: 28px;
+    top: 28px;
+    bottom: auto;
+    height: auto;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+  .tab { flex-direction: row; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 14px; }
+  .tab-icon svg { width: 18px; height: 18px; }
+  .tab.on { background: #e8f4ef; }
+  .tab-panel { inset: 12px; border: 2px solid var(--frame); border-radius: 6px; }
+  .plan-inner { padding-top: 28px; }
+  .plan-day-title { margin: 0 0 8px; padding: 8px 0; }
+  /* Spot side panel sits under the tabs. */
+  .debug-toggle { top: auto; bottom: 40px; right: 80px; }
+  .debug-panel { top: auto; bottom: 90px; right: 80px; }
   #map { inset: 12px; border: 2px solid var(--frame); border-radius: 6px; overflow: hidden; }
   body { background: #f4f1ea; }
   .top-bar { top: 28px; left: 28px; right: 28px; flex-direction: row; align-items: center; flex-wrap: wrap; }
@@ -560,7 +802,7 @@ button.btn { font-family: var(--font); cursor: pointer; }
 
   .sheet {
     left: auto;
-    top: 24px;
+    top: 84px;
     right: 24px;
     bottom: 24px;
     width: 380px;

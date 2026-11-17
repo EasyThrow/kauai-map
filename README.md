@@ -137,6 +137,31 @@ a computer. A short Google Form opens with the location filled in. Answers land 
 3. Add a region and drive time if you like.
 4. Delete the row from **Suggestions**.
 
+### The Plan tab (agenda)
+
+The site's **Plan** tab reads the **Plan** tab of the Sheet. Each row is one activity. Changes
+show up about 5 minutes after you save, just like spots. All times are Hawaii time.
+
+| Column | Notes |
+|---|---|
+| `id` | Optional short id, e.g. `napali-boat`. Used in shared links. Made from the date and title if blank. |
+| `date` | Required, e.g. `2027-02-14` or `2/14/2027` |
+| `start`, `end` | e.g. `9:30 AM`. Leave `start` blank for an "any time" item. |
+| `title` | Required |
+| `spot_id` | The `id` of a spot in **Spots**. Links the card to its pin and puts the spot in the map's Day filter. |
+| `meeting_point` | Where to meet, if not the spot itself |
+| `who` | e.g. `Everyone` or `Sam, Alex` |
+| `cost_pp` | Dollars per person, number only (or a short note) |
+| `bring` | What to bring |
+| `status` | `booked`, `to-book` or `tentative` (blank = tentative) |
+| `book_by` | Booking deadline. `to-book` items show in **Still to book**, soonest first. |
+| `booked_by` | Who holds the booking. Put the name here, not the confirmation number. |
+| `notes` | Short bullets separated by ` // ` |
+| `links` | `Label\|URL` pairs separated by ` ;; ` |
+
+Day 1 is the earliest date in the tab. Before the trip, the Plan shows a countdown. During the trip,
+it shows **Up next** and opens at today.
+
 ## 5. Check new pins with `?debug=1`
 
 Open the map with `?debug=1` at the end of the address, e.g.

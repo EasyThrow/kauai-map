@@ -12,31 +12,10 @@ import {
   isApplePlatform,
   safeUrl,
 } from '../format.js';
+import { copyText, shareButton, siteLink } from '../share.js';
+import { formatDate, formatTime } from '../plan.js';
 
 const APPLE = isApplePlatform();
-
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    // Older browsers / blocked clipboard: fall back to a hidden selection.
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
-    document.body.append(ta);
-    ta.select();
-    let ok = false;
-    try {
-      ok = document.execCommand('copy');
-    } catch {
-      ok = false;
-    }
-    ta.remove();
-    return ok;
-  }
-}
 
 function copyButton(spot) {
   const text = coordText(spot.lat, spot.lng);
@@ -76,7 +55,8 @@ function linkButton(label, href, primary) {
   return a;
 }
 
-function renderSpot(spot) {
+// planned: [{ event, dayNumber }] for plan items at this spot; onPlanEvent opens one.
+function renderSpot(spot, { planned = [], onPlanEvent } = {}) {
   const frag = document.createDocumentFragment();
 
   if (spot.photo) {
@@ -123,6 +103,18 @@ function renderSpot(spot) {
     body.append(row);
   }
 
+  // "In the plan: Day 3 · Sat, Feb 15 · 9:00 AM · Tunnels snorkel"
+  for (const { event, dayNumber } of planned) {
+    const when = [`Day ${dayNumber}`, formatDate(event.date), event.start && formatTime(event.start)]
+      .filter(Boolean)
+      .join(' · ');
+    const b = el('button', 'planned');
+    b.type = 'button';
+    b.append(el('span', 'planned-label', 'In the plan'), el('span', null, `${when} · ${event.title}`));
+    b.addEventListener('click', () => onPlanEvent?.(event.id));
+    body.append(b);
+  }
+
   if (spot.notes.length) {
     const ul = el('ul', 'notes');
     for (const n of spot.notes) ul.append(el('li', null, n));
@@ -145,6 +137,9 @@ function renderSpot(spot) {
     }
     actions.append(copyButton(spot));
   }
+  actions.append(
+    shareButton(() => ({ title: spot.name, text: `${spot.name} (Kauai trip map)`, url: siteLink(`#spot=${encodeURIComponent(spot.id)}`) })),
+  );
   for (const link of spot.links) {
     const href = safeUrl(link.url);
     if (href) actions.append(linkButton(link.label || 'Link', href, false));
@@ -194,9 +189,9 @@ export function createSheet({ onClose }) {
     else sheet.style.transform = '';
   }
 
-  function open(spot) {
+  function open(spot, extras) {
     currentId = spot.id;
-    content.replaceChildren(renderSpot(spot));
+    content.replaceChildren(renderSpot(spot, extras));
     content.scrollTop = 0;
     apply(state === 'full' ? 'full' : 'half');
   }
